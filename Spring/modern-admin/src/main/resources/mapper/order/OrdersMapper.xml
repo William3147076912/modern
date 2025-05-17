@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.modern.order.mapper.OrdersMapper">
+    <resultMap type="Orders" id="OrdersResult">
+        <result property="orderId" column="order_id"/>
+        <result property="roomId" column="room_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="price" column="price"/>
+        <result property="orderStatus" column="order_status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="usageTime" column="usage_time"/>
+        <result property="refundReason" column="refund_reason"/>
+        <result property="refundPrice" column="refund_price"/>
+    </resultMap>
+
+    <sql id="selectOrdersVo">
+        SELECT order_id, room_id, user_id, price, order_status, create_time, usage_time, refund_reason, refund_price
+        FROM orders
+    </sql>
+
+    <!--    <select id="selectOrdersList" parameterType="Orders" resultMap="OrdersResult">
+            <include refid="selectOrdersVo"/>
+            <where>
+                <if test="roomId != null ">
+                    and room_id = #{roomId}
+                </if>
+                <if test="userId != null ">
+                    and user_id = #{userId}
+                </if>
+                <if test="price != null ">
+                    and price = #{price}
+                </if>
+                <if test="orderStatus != null  and orderStatus != ''">
+                    and order_status like concat('%', #{orderStatus}, '%')
+                </if>
+            </where>
+        </select>-->
+    <select id="selectOrdersList">
+        SELECT o.order_id, o.room_id, o.user_id, m.room_name, u.user_name, o.price, o.order_status, o.create_time,
+        o.usage_time,
+        o.refund_reason, o.refund_price
+        FROM orders o
+        LEFT JOIN meeting_room m ON o.room_id = m.room_id
+        LEFT JOIN sys_user u ON o.user_id = u.user_id
+        <where>
+            <if test="userId != null ">
+                and o.user_id = #{userId}
+            </if>
+            <if test="roomName != null ">
+                and room_name like concat('%', #{roomName}, '%')
+            </if>
+            <if test="userName != null ">
+                and user_name like concat('%', #{userName}, '%')
+            </if>
+            <if test="price != null ">
+                and o.price = #{price}
+            </if>
+            <if test="orderStatus != null  and orderStatus != ''">
+                and o.order_status like concat('%', #{orderStatus}, '%')
+            </if>
+        </where>
+    </select>
+
+    <select id="selectOrdersByOrderId" parameterType="Long" resultMap="OrdersResult">
+        <include refid="selectOrdersVo"/>
+        where order_id = #{orderId}
+    </select>
+
+    <insert id="insertOrders" parameterType="Orders" useGeneratedKeys="true" keyProperty="orderId">
+        insert into orders
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="roomId != null">
+                room_id,
+            </if>
+            <if test="userId != null">
+                user_id,
+            </if>
+            <if test="price != null">
+                price,
+            </if>
+            <if test="orderStatus != null">
+                order_status,
+            </if>
+            <if test="createTime != null">
+                create_time,
+            </if>
+            <if test="usageTime != null">
+                usage_time,
+            </if>
+            <if test="refundReason != null">
+                refund_reason,
+            </if>
+            <if test="refundPrice != null">
+                refund_price,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="roomId != null">
+                #{roomId},
+            </if>
+            <if test="userId != null">
+                #{userId},
+            </if>
+            <if test="price != null">
+                #{price},
+            </if>
+            <if test="orderStatus != null">
+                #{orderStatus},
+            </if>
+            <if test="createTime != null">
+                #{createTime},
+            </if>
+            <if test="usageTime != null">
+                #{usageTime},
+            </if>
+            <if test="refundReason != null">
+                #{refundReason},
+            </if>
+            <if test="refundPrice != null">
+                #{refundPrice},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="updateOrders" parameterType="Orders">
+        update orders
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="roomId != null">
+                room_id = #{roomId},
+            </if>
+            <if test="userId != null">
+                user_id = #{userId},
+            </if>
+            <if test="price != null">
+                price = #{price},
+            </if>
+            <if test="orderStatus != null">
+                order_status = #{orderStatus},
+            </if>
+            <if test="createTime != null">
+                create_time = #{createTime},
+            </if>
+            <if test="usageTime != null">
+                usage_time = #{usageTime},
+            </if>
+            <if test="refundReason != null">
+                refund_reason = #{refundReason},
+            </if>
+            <if test="refundPrice != null">
+                refund_price = #{refundPrice},
+            </if>
+        </trim>
+        where order_id = #{orderId}
+    </update>
+
+    <delete id="deleteOrdersByOrderId" parameterType="Long">
+        DELETE
+        FROM orders
+        WHERE order_id = #{orderId}
+    </delete>
+
+    <delete id="deleteOrdersByOrderIds" parameterType="String">
+        delete from orders where order_id in
+        <foreach item="orderId" collection="array" open="(" separator="," close=")">
+            #{orderId}
+        </foreach>
+    </delete>
+    <update id="cancelOrder">
+        UPDATE orders
+        SET order_status = '已取消'
+        WHERE order_id = #{orderId}
+    </update>
+    <update id="payOrder">
+        UPDATE orders
+        SET order_status = '等待使用'
+        WHERE order_id = #{orderId}
+    </update>
+</mapper>
